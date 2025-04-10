@@ -10,7 +10,6 @@ import java.util.List;
 import spell_checker.LinearSearch;
 import spell_checker.SpellChecking;
 import object.StringPoint;
-import static evaluation.SpellCheckerBuilder.*;
 
 /**
  *
@@ -18,113 +17,95 @@ import static evaluation.SpellCheckerBuilder.*;
  */
 public class Evaluator {
 
-    public static int search_count = 0;
+    public static final int BUILD = 1;
+    public static final int RANGE_QUERY = 2;
+    public static final int TOPK_QUERY = 3;
 
-    public void run(int type) throws Exception {
+//    public static final int CHECK = 4;
+//    public static final int PREPARE = 5;
+//    public static final int BUILD_ALL = 6;
+
+    public void run() throws Exception {
         try {
 
-            DictionaryCreator dicCreator = new DictionaryCreator();
+            //provide building structure for all indexnig methods
             IndexBuilder indexBuilder = new IndexBuilder();
-            QueryCreator queryCreator = new QueryCreator();
-            RangeQueryEvaluator rangeQueryEval = new RangeQueryEvaluator();
-            TopkQueryEvaluator topQueryEval = new TopkQueryEvaluator();
-            IndexValidator indexValidator = new IndexValidator();
-            StringLoader stringLoader = new StringLoader();
-
+            
+            //brute-force method used for comparisons
             LinearSearch linearSearch = new LinearSearch();
 
+            //action to be executed
+            int type = Evaluator.TOPK_QUERY;
+
+            //max edit distance for those methods that need it for index construction
+            int maxEditDist = 2;
+
+            //indexing methods
             List<Integer> checkerTypes = new ArrayList();
-            checkerTypes.add(ATRIE);
-            
-            
-//            checkerTypes.add(LUCENE_AUTOMATON);
-//            checkerTypes.add(LEV_AUTOMATON);
-            checkerTypes.add(ATRIE);
-            checkerTypes.add(LTRIE);
-//            checkerTypes.add(BKTREE);
-//             checkerTypes.add(VPTREE);
-//            checkerTypes.add(SYMSPELL);
-//            checkerTypes.add(NGRAM2);
-//            checkerTypes.add(NGRAM3);
+            checkerTypes.add(SpellCheckerBuilder.ATRIE);
+            checkerTypes.add(SpellCheckerBuilder.LTRIE);
+            //checkerTypes.add(LTRIE);
+            List<SpellChecking> checkers = SpellCheckerBuilder.createSpellCheckers(checkerTypes, maxEditDist, 30);
 
-//            checkerTypes.add(ATRIE);
-//            checkerTypes.add(ATRIE_2);
-//            checkerTypes.add(ATRIE_3);
-//            checkerTypes.add(ATRIE_4);
-//            checkerTypes.add(ATRIE_UNBOUNDED);
-//            checkerTypes.add(SYMSPELL);
-//            checkerTypes.add(NGRAM3);
-
-            List<SpellChecking> checkers = SpellCheckerBuilder.createSpellCheckers(checkerTypes, 2, 30);
-            //String dataFile = "C:\\teste\\trie\\googlebooks_cleaned.txt";
-            String dataFile = "C:\\teste\\trie\\googlebooks_cleaned_200000.txt";
-            //String dataFile = "C:\\teste\\trie\\teste.txt";
-            //String queryFile = "C:\\teste\\trie\\query.txt";
-            
-            //String queryFile = "C:\\teste\\trie\\queries_200k_nonExisting_words.txt";
-            //String queryFile = "C:\\teste\\trie\\queries_200k_small_words.txt";
-            //String queryFile = "C:\\teste\\trie\\query001.txt";
-            String queryFile = "C:\\teste\\trie\\queries_200k_medium_words.txt";
-            //String queryFile = "C:\\teste\\trie\\queries_200k_large_words.txt";
-            //String queryFile = "C:\\teste\\trie\\queries_200k_20.txt";
-            //"C:\\teste\\google_ngrams.txt"
-            int gap = 50000;
+            //dataset
+            String dataFile = "googlebooks_cleaned.txt";
+            //size of the dataset to process
             int limit = 999999999;
+            //minimal and maximal word sizes
             int minWord = 3;
             int maxWord = 49;
-            int times = 100;
-            boolean verbose = true;
+
+            //queryset
+            String queryFile = "queries_large_words.txt";
+            //whether to add a typo in each word of the queryset
             boolean includeOneTypo = true;
 
-            int d = 3;
+            //number of executions
+            int times = 100;
+
+            //max edit distance for range queries
+            int d = 2;
+
+            //max k for top-k queries
+            int topk = 5;
+
             switch (type) {
-                case BUILD_ALL:
-                    indexBuilder.evaluateBuilding(checkers, dataFile, d, gap);
+//                case BUILD_ALL:
+//                    indexBuilder.evaluateBuilding(checkers, dataFile, d, 50000);
+//                    break;
+                case BUILD:
+                    indexBuilder.evaluateBuilding(checkers, dataFile, maxEditDist);
                     break;
-                case BUILD_ONE:
-                    indexBuilder.evaluateBuilding(checkers, dataFile, d);
-                    break;
-                case PREPARE:
-                    dicCreator.prepareDictionaryFiles(dataFile, false, d, gap, minWord, maxWord);
-                    break;
-                case QUERY:
+//                case PREPARE:
+//                    DictionaryCreator dicCreator = new DictionaryCreator();
+//                    dicCreator.prepareDictionaryFiles(dataFile, false, d, 50000, minWord, maxWord);
+//                    break;
+                case RANGE_QUERY:
+                    System.out.println("-- preparing dataset ");
                     ArrayList<StringPoint> points = StringLoader.loadStrings(dataFile, limit, minWord, maxWord, false);
-                    //QueryCreator qc = new QueryCreator();
-                    //qc.createQueryFile("c:\\teste\\trie\\query001.txt", points, 50, 5, 10);
                     indexBuilder.buildIndexes(points, linearSearch, checkers, dataFile, d, limit, minWord, maxWord);
-                    if (1 == 0) {
-                        System.out.println("return without querying");
-                        break;
-                    }
-                    
-                    //for (int i = 11; i <= 11; i++) 
-                     {
-                        //queryFile = "C:\\teste\\trie\\queries_200k_" + i + ".txt";
-                        //System.out.println("SIZE = " + i);
-                        rangeQueryEval.evaluateRangeQueries(linearSearch, checkers, dataFile, queryFile, d, points.size(), includeOneTypo);
-                        System.out.println("");
-                    }
+                    System.out.println("");
+                    RangeQueryEvaluator rangeQueryEval = new RangeQueryEvaluator();
+                    rangeQueryEval.evaluateRangeQueries(linearSearch, checkers, dataFile, queryFile, d, points.size(), times, includeOneTypo);
+                    System.out.println("");
 
                     break;
-                case TOPK:
+                case TOPK_QUERY:
+                    System.out.println("-- preparing dataset ");
                     points = StringLoader.loadStrings(dataFile, limit, minWord, maxWord, false);
                     indexBuilder.buildIndexes(points, linearSearch, checkers, dataFile, d, limit, minWord, maxWord);
-                    int topk = 1;
-                    //for (int i = 16; i <= 20; i++)
-                    //for (; topk <= 10; topk+=2) 
-                     {
-                        //queryFile = "C:\\teste\\trie\\queries_200k_" + i + ".txt";
-                        //System.out.println("SIZE = " + i);
-                        topQueryEval.evaluateTopkQueries(linearSearch, checkers, dataFile, queryFile, topk, points.size(), times, verbose, includeOneTypo);
-                        System.out.println("");
-                    }
+                    System.out.println("");
+                    TopkQueryEvaluator topQueryEval = new TopkQueryEvaluator();
+                    topQueryEval.evaluateTopkQueries(linearSearch, checkers, dataFile, queryFile, topk, points.size(), times, includeOneTypo);
+                    System.out.println("");
 
                     break;
-                case CHECK:
-                    points = StringLoader.loadStrings(dataFile, 1000000, minWord, maxWord, false);
-                    indexBuilder.buildIndexes(points, linearSearch, checkers, dataFile, d, 1000000, minWord, maxWord);
-                    indexValidator.checkPrecision(linearSearch, checkers, dataFile, d);
-                    break;
+//                case CHECK:
+//                    points = StringLoader.loadStrings(dataFile, limit, minWord, maxWord, false);
+//                    indexBuilder.buildIndexes(points, linearSearch, checkers, dataFile, d, 1000000, minWord, maxWord);
+//                    IndexValidator indexValidator = new IndexValidator();
+//                    indexValidator.checkPrecision(linearSearch, checkers, dataFile, d);
+//                    break;
                 default:
                     break;
             }
@@ -134,17 +115,10 @@ public class Evaluator {
         }
     }
 
-    public static final int PREPARE = 1;
-    public static final int BUILD_ALL = 2;
-    public static final int QUERY = 3;
-    public static final int CHECK = 4;
-    public static final int BUILD_ONE = 5;
-    public static final int TOPK = 6;
-
     public static void main(String[] args) {
         Evaluator t = new Evaluator();
         try {
-            t.run(TOPK);
+            t.run();
         } catch (Exception ex) {
         }
 

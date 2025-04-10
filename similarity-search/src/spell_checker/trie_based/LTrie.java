@@ -87,7 +87,6 @@ public class LTrie implements SpellChecking {
     @Override
     public void addWords(List<String> words) {
 
-        System.out.println("--order ");
         for (int i = 0; i < words.size(); i++) {
             String word = words.get(i);
             String prefix = word;

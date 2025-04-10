@@ -16,11 +16,12 @@ import spell_checker.SpellChecking;
  * @author ferna
  */
 public class TopkQueryEvaluator {
-    public void evaluateTopkQueries(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String dataFile, String queryFile, int k, int dictionarySize, int times, boolean verbose, boolean includeOneTypo) throws IOException, Exception {
+
+    public void evaluateTopkQueries(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String dataFile, String queryFile, int k, int dictionarySize, int times,  boolean includeOneTypo) throws IOException, Exception {
 
         StringLoader stringLoader = new StringLoader();
         DictionaryCreator dictionaryCreator = new DictionaryCreator();
-        
+
         dictionaryCreator.setFile(dataFile);
 
         List<List<Object>> allMeasures = new ArrayList();
@@ -31,21 +32,18 @@ public class TopkQueryEvaluator {
             oneMeasure.add(spellChecker.getName());
         }
         allMeasures.add(oneMeasure);
-        System.out.println(oneMeasure);
 
-        //for (startSuffix = suffix * 1; startSuffix <= initSuffix * 10; startSuffix += initSuffix) {
+        ArrayList<String> queries = stringLoader.loadStrings(queryFile, includeOneTypo);
 
+        //warmup
+        evalQueries(queries, k, dictionarySize, spellCheckers, 10, false);
 
-            ArrayList<String> queries = stringLoader.loadStrings(queryFile, includeOneTypo);
-            
-            //for (int i = 0; i < 10; i++) 
-            {
-                oneMeasure = evalQueries(queries, k, dictionarySize, spellCheckers, times, verbose);
-                allMeasures.add(oneMeasure);
-            }
+        //execution
+        oneMeasure = evalQueries(queries, k, dictionarySize, spellCheckers, times, true);
+        allMeasures.add(oneMeasure);
 
-
-        for (int i = allMeasures.size() - 1; i >= 0; i--) {
+        System.out.println("\nFinal result:");
+        for (int i = 0;i< allMeasures.size(); i++) {
             List<Object> oneMeasure_ = allMeasures.get(i);
             boolean first = true;
             System.out.println("");
@@ -60,45 +58,51 @@ public class TopkQueryEvaluator {
     }
 
     private List<Object> evalQueries(ArrayList<String> queries, int k, int dictionarySize, List<SpellChecking> checkers, int times, boolean verbose) {
-        System.out.println("\nrun-time test");
+        if (verbose){
+        System.out.println("\nResting top-k queries");
         System.out.println("top k = " + k);
+        }
+        
         List<Object> oneMeasure = new ArrayList();
         oneMeasure.add(dictionarySize);
         for (SpellChecking spellChecker : checkers) {
-            System.out.println("testing " + spellChecker.getName());
+            if (verbose)
+                System.out.println("\ntesting " + spellChecker.getName());
             long start = -1;
             for (int x = 0; x < times; x++) {
-                if (x==10)
+                if (x == 10) {
                     start = System.currentTimeMillis();
+                }
                 double count = 0;
                 double sum = 0;
                 for (int i = 0; i < queries.size(); i++) {
                     List<String> list = spellChecker.topKSearch(queries.get(i), k);
                     count += list.size();
-                    sum+=sumDistances(list, queries.get(i));
+                    sum += sumDistances(list, queries.get(i));
                 }
                 if (x == 0 && verbose) {
                     System.out.println("avg results " + count / queries.size());
-                    System.out.println("avg distance " + sum/count);
+                    System.out.println("avg distance " + sum / count);
                 }
 
             }
             long end = System.currentTimeMillis();
             long time = end - start;
+            if (verbose)
+                System.out.println("time (ms):" + time);
+            
             oneMeasure.add(time);
         }
 
-        //for (d = 1; d < 3; d++) 
-        System.out.println(oneMeasure);
         return oneMeasure;
     }
 
-    private double sumDistances(List<String> candidates, String query){
+    private double sumDistances(List<String> candidates, String query) {
         double sum = 0;
         for (String candidate : candidates) {
-            sum+=EditDistance.distance(candidate, query);
+            sum += EditDistance.distance(candidate, query);
         }
         return sum;
     }
-    
+
 }

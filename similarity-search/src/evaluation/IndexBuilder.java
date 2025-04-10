@@ -21,64 +21,51 @@ import object.StringPoint;
  */
 public class IndexBuilder {
 
-    private void measureMemory1(){
-    // Compute memory usage
-            System.gc();
-            Runtime runtime1 = Runtime.getRuntime();
-            long totalMemory1 = runtime1.totalMemory(); // Total allocated memory
-            long freeMemory1 = runtime1.freeMemory();   // Unused allocated memory
-            long usedMemory1 = totalMemory1 - freeMemory1; // Actual used memory
+    private void measureMemory1() {
+        // Compute memory usage
+        System.gc();
+        Runtime runtime1 = Runtime.getRuntime();
+        long totalMemory1 = runtime1.totalMemory(); // Total allocated memory
+        long freeMemory1 = runtime1.freeMemory();   // Unused allocated memory
+        long usedMemory1 = totalMemory1 - freeMemory1; // Actual used memory
 
-            System.out.println("Total Memory: " + totalMemory1 / (1024 * 1024) + " MB");
-            System.out.println("Free Memory: " + freeMemory1 / (1024 * 1024) + " MB");
-            System.out.println("Used Memory: " + usedMemory1 / (1024 * 1024) + " MB");
+        System.out.println("Total Memory: " + totalMemory1 / (1024 * 1024) + " MB");
+        System.out.println("Free Memory: " + freeMemory1 / (1024 * 1024) + " MB");
+        System.out.println("Used Memory: " + usedMemory1 / (1024 * 1024) + " MB");
     }
-    
-    private void measureMemory2(){
-        
-    }
-    
+
     public void buildIndexes(List<StringPoint> words, LinearSearch linearSearch, List<SpellChecking> spellCheckers, String file, int d, int limit, int minWord, int maxWord) throws IOException, Exception {
-
-        System.out.println("-- preparing dataset ");
 
         List<String> words_ = words.stream().map(word -> new String(word.word))
                 .collect(Collectors.toList());
 
+        System.out.println("");
+
         System.out.println("-- building indexes");
         linearSearch.addWords(words_);
-        
-        
-        measureMemory1();
-            
-            
-        // Get MemoryMXBean
-        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
 
-        // Antes de executar o código
-        MemoryUsage beforeHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        //System.out.println("Heap Memory (antes): " + beforeHeapMemoryUsage);
-            
         for (SpellChecking spellChecker : spellCheckers) {
+            System.gc();
+            MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+            MemoryUsage beforeHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
             long start = System.currentTimeMillis();
-            System.out.println("adding words for " + spellChecker.getName());
+            System.out.println("building " + spellChecker.getName());
             spellChecker.addWords(words_);
 
             long end = System.currentTimeMillis();
             long time = end - start;
-            System.out.println("time(ms) :" + time);
+            System.out.println("time to build(ms) :" + time);
 
-            measureMemory1();
+            System.gc();
+            MemoryUsage afterHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+
+            long usedMemoryBefore = beforeHeapMemoryUsage.getUsed();
+            long usedMemoryAfter = afterHeapMemoryUsage.getUsed();
+            System.out.println("Used Memory: " + ((usedMemoryAfter - usedMemoryBefore) / 1024) + " kb");
+            System.out.println("");
+
         }
-        
-        // Após executar o código
-        MemoryUsage afterHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        //System.out.println("Heap Memory (depois): " + afterHeapMemoryUsage);
 
-        // Diferença no uso de memória
-        long usedMemoryBefore = beforeHeapMemoryUsage.getUsed();
-        long usedMemoryAfter = afterHeapMemoryUsage.getUsed();
-        System.out.println("Used Memory: " + ((usedMemoryAfter - usedMemoryBefore)/1024) + " kb");
     }
 
     public void evaluateBuilding(List<SpellChecking> spellCheckers, String filePath, int d, int gap) throws IOException, Exception {

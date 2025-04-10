@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import spell_checker.LinearSearch;
 import spell_checker.SpellChecking;
-import spell_checker.edit_based.SymSpellWrapper;
 
 /**
  *
@@ -19,7 +18,7 @@ import spell_checker.edit_based.SymSpellWrapper;
  */
 public class RangeQueryEvaluator {
 
-    public void evaluateRangeQueries(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String dataFile, String queryFile, int d, int dictionarySize, boolean includeOneTypo) throws IOException, Exception {
+    public void evaluateRangeQueries(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String dataFile, String queryFile, int d, int dictionarySize, int times,  boolean includeOneTypo) throws IOException, Exception {
 
         StringLoader stringLoader = new StringLoader();
         DictionaryCreator dictionaryCreator = new DictionaryCreator();
@@ -34,19 +33,18 @@ public class RangeQueryEvaluator {
             oneMeasure.add(spellChecker.getName());
         }
         allMeasures.add(oneMeasure);
-        System.out.println(oneMeasure);
 
-        //d = 2;
-        //for (startSuffix = suffix * 1; startSuffix <= initSuffix * 10; startSuffix += initSuffix) {
         ArrayList<String> queries = stringLoader.loadStrings(queryFile, includeOneTypo);
-        
-        //warmup
-        evalQueries(queries, d, dictionarySize, spellCheckers, 10);
 
-        oneMeasure = evalQueries(queries, d, dictionarySize, spellCheckers, 100);
+        //warmup
+        evalQueries(queries, d, dictionarySize, spellCheckers, 10, false);
+
+        //execution
+        oneMeasure = evalQueries(queries, d, dictionarySize, spellCheckers, times, true);
         allMeasures.add(oneMeasure);
 
-        for (int i = allMeasures.size() - 1; i >= 0; i--) {
+        System.out.println("\nFinal Result:");
+        for (int i = 0; i < allMeasures.size(); i++) {
             List<Object> oneMeasure_ = allMeasures.get(i);
             boolean first = true;
             System.out.println("");
@@ -60,15 +58,18 @@ public class RangeQueryEvaluator {
         }
     }
 
-    private List<Object> evalQueries(ArrayList<String> queries, int d, int dictionarySize, List<SpellChecking> checkers, int times) {
-        System.out.println("\nrun-time test");
+    private List<Object> evalQueries(ArrayList<String> queries, int d, int dictionarySize, List<SpellChecking> checkers, int times, boolean verbose) {
+        if (verbose){
+        System.out.println("\nTesting range queries");
         System.out.println("d = " + d);
+        }
         List<Object> oneMeasure = new ArrayList();
         oneMeasure.add(dictionarySize);
         SymSpellImpl.CANDIDATES = 0;
         SymSpellImpl.ANALYZED_CANDIDATES = 0;
         for (SpellChecking spellChecker : checkers) {
-            System.out.println("testing " + spellChecker.getName());
+            if (verbose)
+                System.out.println("\ntesting " + spellChecker.getName());
             long start = System.currentTimeMillis();
             for (int x = 0; x < times; x++) {
                 int count = 0;
@@ -76,36 +77,32 @@ public class RangeQueryEvaluator {
                 for (int i = 0; i < queries.size(); i++) {
                     List<String> list = spellChecker.search(queries.get(i), d);
                     count += list.size();
-                    sum+=sumDistances(list, queries.get(i));
+                    sum += sumDistances(list, queries.get(i));
                 }
-                if (x == 0) {
+                if (x == 0 && verbose) {
                     System.out.println("avg results " + count / queries.size());
-                    System.out.println("avg distance " + sum/count);
-                    
+                    System.out.println("avg distance " + sum / count);
+
                 }
 
             }
             long end = System.currentTimeMillis();
             long time = end - start;
-            System.out.println(time);
+            if (verbose)
+                System.out.println("time (ms):" + time);
             oneMeasure.add(time);
-            if (spellChecker instanceof SymSpellWrapper) {
-                System.out.println("candidates: " + SymSpellImpl.ANALYZED_CANDIDATES);
-                System.out.println("candidates: " + SymSpellImpl.CANDIDATES);
-            }
         }
 
-        //for (d = 1; d < 3; d++) 
-        System.out.println(oneMeasure);
+        //System.out.println(oneMeasure);
         return oneMeasure;
     }
 
-    private double sumDistances(List<String> candidates, String query){
+    private double sumDistances(List<String> candidates, String query) {
         double sum = 0;
         for (String candidate : candidates) {
-            sum+=EditDistance.distance(candidate, query);
+            sum += EditDistance.distance(candidate, query);
         }
         return sum;
     }
-    
+
 }
