@@ -16,7 +16,7 @@ import static evaluation.SpellCheckerBuilder.*;
  *
  * @author pccli
  */
-public class TrieTester11 {
+public class Evaluator {
 
     public static int search_count = 0;
 
@@ -142,7 +142,7 @@ public class TrieTester11 {
     public static final int TOPK = 6;
 
     public static void main(String[] args) {
-        TrieTester11 t = new TrieTester11();
+        Evaluator t = new Evaluator();
         try {
             t.run(TOPK);
         } catch (Exception ex) {

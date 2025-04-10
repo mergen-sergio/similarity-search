@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import object.StringPoint;
-import util.WordExtractor;
+import util.StringHelper;
 
 /**
  *
@@ -59,11 +59,11 @@ public class DictionaryCreator {
 
         setFile(filePath);
 
-        WordExtractor we = new WordExtractor();
+        StringHelper we = new StringHelper();
         System.out.println("Reading file");
-        ArrayList<StringPoint> words = we.feedStringPointWords(filePath, 999999999, minWord, maxWord);
+        ArrayList<StringPoint> words = we.createStringPoints(filePath, 999999999, minWord, maxWord);
         //ArrayList<StringPoint> words = we.buildNLetterWords(10,99999);
-        WordExtractor.removeDuplicates2(words);
+        StringHelper.removeDuplicates(words);
 
         if (shuffle) {
             Collections.shuffle(words);
@@ -81,7 +81,7 @@ public class DictionaryCreator {
             //System.out.println(data.toString());
             String newFile = directory + "\\" + fileNameWithoutExtension + "_" + limit + "." + extension;
             System.out.println("File: " + newFile);
-            we.writeStringFile(newFile, data);
+            we.writeFile(newFile, data);
 
         }
 

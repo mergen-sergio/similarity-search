@@ -118,13 +118,13 @@ public class QueryCreator {
             QueryCreator queryCreator = new QueryCreator();
             StringLoader stringLoader = new StringLoader();
             int c = 11;
-            String dataFile = "C:\\teste\\trie\\googlebooks_cleaned_200000.txt";
-            String queryFile = "C:\\teste\\trie\\queries_200k_"+c+".txt";
+            String dataFile = "C:\\googlebooks_cleaned_200000.txt";
+            String queryFile = "C:\\queries_200k_"+c+".txt";
             ArrayList<StringPoint> points = stringLoader.loadStrings(dataFile, 999999999, 3, 49, false);
             queryCreator.createQueryFile(queryFile, points, 50, c, c);
             //queryCreator.createQueryFileWithNonExistentWords(queryFile, points, 100);
         } catch (Exception ex) {
-            System.out.println("ERRO:"+ex.getMessage());
+            System.out.println("ERROR:"+ex.getMessage());
         }
     }
 

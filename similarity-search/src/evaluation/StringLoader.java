@@ -23,7 +23,7 @@ public class StringLoader {
         ArrayList<StringPoint> words = loadStringPoints(file, limit, minWord, maxWord);
         //ArrayList<StringPoint> words = we.buildNLetterWords(10,99999);
 
-        removeDuplicates2(words);
+        removeDuplicates(words);
 
         if (shuffle) {
             Collections.shuffle(words);
@@ -120,7 +120,7 @@ public class StringLoader {
         return words;
     }
 
-    public static void removeDuplicates2(ArrayList words) throws Exception {
+    public static void removeDuplicates(ArrayList words) throws Exception {
 
         Hashtable<String, Integer> dic = new Hashtable<String, Integer>();
 
