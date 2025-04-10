@@ -1,6 +1,6 @@
 package io.gitlab.rxp90.jsymspell.api;
 
-import distance.Levenshtein;
+import metric.EditDistance;
 
 
 
@@ -21,7 +21,7 @@ public class DamerauLevenshteinOSA implements StringDistance {
 
     @Override
     public int distanceWithEarlyStop(String baseString, String string2, int maxDistance) {
-        int current = Levenshtein.distance(baseString, string2, maxDistance);
+        int current = EditDistance.distance(baseString, string2, maxDistance);
         //int current = lev.wordDistance(baseString, string2);
         //int current = lev.ukkonen(baseString, string2, maxDistance+1);
         return (current <= maxDistance) ? current : -1;
