@@ -35,13 +35,14 @@ The following approximate search methods are implemented and compared:
 To reproduce the experiments:
 
 1. Ensure you have Java and a compatible IDE (e.g., NetBeans or IntelliJ).
-2. Set the entry point to `evaluation.Evaluator`.
-3. Configure the desired `type` of experiment:
+2. Make sure dependencies (e.g., classes from the project and external libraries) are properly set.
+3. Set the entry point to `evaluation.Evaluator`.
+4. Configure the desired `type` of experiment:
    - `Evaluator.BUILD` for index construction.
    - `Evaluator.RANGE_QUERY` for range queries.
    - `Evaluator.TOPK_QUERY` for top-k queries.
-4. Provide input files such as `googlebooks_cleaned.txt` and `queries_large_words.txt` in the project root.
-5. Modify parameters such as:
+5. Provide input files such as `googlebooks_cleaned.txt` and `queries_large_words.txt` in the project root.
+6. Modify parameters such as:
    - `maxEditDist` for setting maximum allowed edit distance.
    - `topk` for top-k search.
    - `includeOneTypo` to optionally add noise to query words.
