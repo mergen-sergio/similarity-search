@@ -1,78 +1,67 @@
-# Anagram-Based Approximate Dictionary Search
+# Approximate Dictionary Search Evaluation
 
-This repository contains the source code and experimental setup for the paper _"Anagram-Based Approximate Dictionary Search with Trie Indexing."_ The project includes implementations of efficient approximate string matching methods and an evaluation framework for comparing query performance and memory usage.
+This repository contains the code and scripts used to evaluate several approximate dictionary search methods (spell Checkers). The evaluation is based on measuring construction time, memory usage, and query performance (range and top-k queries).
 
-## Requirements
+## Implemented Methods
 
-- Java 8 or above
-- JDK-compatible IDE (e.g., NetBeans or IntelliJ) or CLI (command line)
-- Approximately 8GB RAM for full-scale experiments
+The following approximate search methods are implemented and compared:
 
-## Project Structure
+- **ATRIE**  
+  A trie-based structure using sorted character sequences (anagram representation). It supports efficient range and top-k queries. It can be configured with a maximum edit distance (e.g., 2, 3, 4) or with unlimited distance.
 
-The main evaluation class is:
+- **LTRIE**  
+  Similar to ATRIE but built using the lexicographic representation of words instead of sorted characters. Also supports fast approximate search.
 
-```java
-evaluation.Evaluator
-```
+- **BKTREE**  
+  A tree-based index where each node contains a word, and children are organized by edit distance to that word. Suited for small to medium-sized dictionaries.
 
-This class allows running the different stages of the evaluation pipeline, including:
+- **VPTREE**  
+  A metric tree built from pivot-based partitioning. Supports approximate search by exploring subtrees based on triangle inequality.
 
-- Index building
-- Range queries
-- Top-k queries
+- **LUC_AUT**  
+  A Levenshtein automaton built using the Lucene library's framework. Suitable for low edit distances.
 
-You can control the execution mode by changing the `type` field in the `run()` method:
+- **LEV_AUT**  
+  A standalone implementation of the Levenshtein automaton, capable of accepting or rejecting words based on a specified maximum distance.
 
-```java
-int type = Evaluator.TOPK_QUERY;
-```
+- **SYMSPELL**  
+  A popular algorithm that precomputes deletions of dictionary words. Extremely fast for small distances (typically 1 or 2), but has high memory consumption and limited flexibility.
 
-Options include:
+- **NGRAM**  
+  An indexing method that uses character n-grams. Supports both bigrams (n=2) and trigrams (n=3). Approximate matches are found based on overlapping n-grams.
 
-```java
-Evaluator.BUILD         // Builds the indexes only
-Evaluator.RANGE_QUERY   // Runs range queries
-Evaluator.TOPK_QUERY    // Runs top-k nearest neighbor queries
-```
+## Running the Evaluation
 
-## Dataset and Queries
+To reproduce the experiments:
 
-- The input dictionary is expected at:  
-  `googlebooks_cleaned.txt`
+1. Ensure you have Java and a compatible IDE (e.g., NetBeans or IntelliJ).
+2. Set the entry point to `evaluation.Evaluator`.
+3. Configure the desired `type` of experiment:
+   - `Evaluator.BUILD` for index construction.
+   - `Evaluator.RANGE_QUERY` for range queries.
+   - `Evaluator.TOPK_QUERY` for top-k queries.
+4. Provide input files such as `googlebooks_cleaned.txt` and `queries_large_words.txt` in the project root.
+5. Modify parameters such as:
+   - `maxEditDist` for setting maximum allowed edit distance.
+   - `topk` for top-k search.
+   - `includeOneTypo` to optionally add noise to query words.
 
-- Query sets are defined in files like:  
-  `queries_large_words.txt`
+## Summary of Findings
 
-These files must be placed in the root folder or paths adjusted accordingly.
+We focus our analysis on **ATRIE** and **SYMSPELL**, the most promising methods among those evaluated:
 
-## Running the Experiments
+- **ATRIE** stands out as a **robust and versatile solution**. It offers:
+  - High accuracy in both range and top-k queries.
+  - Efficient index size and fast query times.
+  - Support for larger edit distances.
+  - Consistent performance across different query lengths and noise levels.
 
-### Compile
+- **SYMSPELL**, while **extremely fast** for edit distance 1 or 2, presents notable trade-offs:
+  - It requires substantial memory to store precomputed deletions.
+  - It lacks flexibility to handle higher distances or custom similarity definitions.
+  - Precision drops sharply when querying longer or noisier words.
 
-Use an IDE or run:
-
-```bash
-javac evaluation/Evaluator.java
-```
-
-Make sure dependencies (e.g., classes from `spell_checker`, `object`, etc.) are also compiled.
-
-### Run
-
-Execute the main class:
-
-```bash
-java evaluation.Evaluator
-```
-
-The output will include timing results and performance summaries for each method under evaluation.
-
-## Notes
-
-- The current setup uses two indexing strategies: `A-Trie` and `L-Trie`.
-- You can adjust the number of repetitions, edit distance thresholds, and dataset size within the `Evaluator.java` class.
-- The method `LinearSearch` is used as the brute-force baseline.
+In summary, **ATRIE delivers a strong balance of efficiency, scalability, and accuracy**. **SYMSPELL** may still be useful when memory is abundant and ultra-low-latency for low-error queries is essential.
 
 <!-- ## Citation
 
