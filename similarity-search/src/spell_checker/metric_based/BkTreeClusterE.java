@@ -55,13 +55,30 @@ public class BkTreeClusterE implements SpellChecking {
         return result.toArray();
     }
 
-    @Override
-    public List<String> topKSearch(String query, int topK) {
+    //@Override
+    public List<String> topKSearch1(String query, int topK) {
         TopKResult result = new TopKResult(topK);
         result.maxDist = maxDist;
         search2(query, result);
         return result.toArray();
     }
+    
+    public List<String> topKSearch(String query, int topK) {
+        List<String> resultsX = new ArrayList<>();
+        for (int i = 1; i < maxDist + 1; i++) {
+            List<String> results = search(query, i);
+            results.removeAll(resultsX);
+            for (int j = 0; j < results.size(); j++) {
+                resultsX.add(results.get(j));
+                if (resultsX.size() == topK) {
+                    return resultsX;
+                }
+            }
+        }
+        //System.out.println("chegou aqui!!");
+        return resultsX;
+    }
+
 
     @Override
     public String getName() {

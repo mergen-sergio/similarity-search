@@ -10,8 +10,6 @@ import query.result.Result;
 import query.result.TopKResult;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Stack;
 import metric.UKonnen;
 import spell_checker.SpellChecking;
@@ -38,12 +36,29 @@ public class LTrie implements SpellChecking {
         return "L-Trie";
     }
 
-    @Override
-    public List<String> topKSearch(String query, int topK) {
+    
+    //@Override
+    public List<String> topKSearch1(String query, int topK) {
         TopKResult results = new TopKResult(topK);
         results.maxDist = maxDist;
         topkSearch(query, results);
         return results.toArray();
+    }
+    
+    public List<String> topKSearch(String query, int topK) {
+        List<String> resultsX = new ArrayList<>();
+        for (int i = 1; i < maxDist + 1; i++) {
+            List<String> results = search(query, i);
+            results.removeAll(resultsX);
+            for (int j = 0; j < results.size(); j++) {
+                resultsX.add(results.get(j));
+                if (resultsX.size() == topK) {
+                    return resultsX;
+                }
+            }
+        }
+        //System.out.println("chegou aqui!!");
+        return resultsX;
     }
 
     public class TrieNode {
@@ -216,7 +231,7 @@ public class LTrie implements SpellChecking {
         RangeQueryResult result = new RangeQueryResult(d);
         rangeSearch(word, result);
         
-        return result.toArray();
+        return result.toSortedArray();
 
     }
 
@@ -338,6 +353,8 @@ public class LTrie implements SpellChecking {
 
         return min;
     }
+    
+    
 
     public void topkSearch(String q, TopKResult result) {
         //Queue<QueueNode> nodes = new PriorityQueue<>();

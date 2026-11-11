@@ -10,7 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
 import object.StringPoint;
+import util.StringHelper;
 
 /**
  *
@@ -30,8 +33,25 @@ public class StringLoader {
         }
 
         System.out.println("words size " + words.size());
+       // verificarDuplicatas(words);
         return words;
     }
+    
+      
+    
+    public static void verificarDuplicatas(List lista) {
+        Set conjunto = new HashSet(lista);
+        
+        if (conjunto.size() < lista.size()) {
+            System.out.println("⚠️ Alerta: A lista contém strings duplicadas! (Total na lista: " 
+                + lista.size() + ", Total únicas: " + conjunto.size() + ")");
+        } else {
+            System.out.println("✅ Não há duplicatas na lista.");
+        }
+    
+}
+    
+    
 
     public static ArrayList<StringPoint> loadStringPoints(String file, int limit, int minWord, int maxWord) throws Exception {
 
@@ -89,8 +109,9 @@ public class StringLoader {
         return words;
     }
 
-    public ArrayList<String> loadStrings(String file, boolean includeOneTypo) throws Exception {
+    public ArrayList<String> loadStrings(String file, int limit, boolean includeOneTypo, int prefixSize) throws Exception {
 
+        int charCount = 0;
         BufferedReader br = new BufferedReader(new FileReader(file));
         ArrayList<String> words = new ArrayList<String>();
         StringBuilder sb = new StringBuilder();
@@ -108,7 +129,12 @@ public class StringLoader {
                     int mid = aux.length()/2;
                     aux = aux.substring(0,mid) + "q"+ aux.substring(mid, aux.length());
                 }
+                if (aux.length()>prefixSize){
+                    aux = aux.substring(0, prefixSize);
+                }
+                charCount += aux.length();
                 words.add(aux);
+                if (words.size()>=limit) break;
                 sb.delete(0, sb.length());
                 line = br.readLine();
             }
@@ -116,7 +142,46 @@ public class StringLoader {
         } finally {
             br.close();
         }
+        //removeDuplicates(words);
+        System.out.println("avg query lenght "+charCount/words.size());
+        return words;
+    }
+    
+    public ArrayList<String> loadStrings(String file, int limit, int typos, int prefixSize) throws Exception {
 
+        int charCount = 0;
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        ArrayList<String> words = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        try {
+            String line = br.readLine();
+
+            while (line != null) {
+                int len = line.length();
+                for (int x = 0; x < len; x++) {
+                    sb.append(line.charAt(x));
+
+                }
+                String aux = sb.toString().toLowerCase().replaceAll("[^a-zA-Z]+", "");
+                if (aux.length()>prefixSize){
+                    aux = aux.substring(0, prefixSize);
+                }
+                if (typos>0){
+                    aux = StringHelper.replaceRandomCharacters(aux, typos,"q");
+                }
+                
+                charCount += aux.length();
+                words.add(aux);
+                if (words.size()>=limit) break;
+                sb.delete(0, sb.length());
+                line = br.readLine();
+            }
+
+        } finally {
+            br.close();
+        }
+        //removeDuplicates(words);
+        System.out.println("avg query lenght "+charCount/words.size());
         return words;
     }
 
@@ -135,5 +200,58 @@ public class StringLoader {
 
         }
 
+    }
+    
+    public static String[] loadStringArray(String file, int limit, int minWord, int maxWord) throws Exception {
+
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String[] words = new String[limit];
+        int lineCount = -1;
+        StringBuilder sb = new StringBuilder();
+        int index = 0;
+        try {
+            String line = br.readLine();
+
+            while (line != null) {
+                lineCount++;
+                
+                int indexOfTab = line.indexOf('\t');
+                if (indexOfTab != -1) {
+                    line = line.substring(0, indexOfTab);
+                }
+                int len = line.length();
+
+                for (int x = 0; x < len; x++) {
+                    sb.append(line.charAt(x));
+//                    if (line.charAt(x) == ' ' || x==45 ) {
+//                        wordCount++;
+//                        //sb.append(System.lineSeparator());
+//                        String aux = sb.toString().toLowerCase().replaceAll("[^a-zA-Z]+", "");
+//                        if (!aux.equals(""))
+//                            words.add(new StringPoint(aux));
+//                        sb.delete(0, sb.length());
+//                    }
+                }
+                if (sb.length() > 0) {
+
+                    String aux = sb.toString().toLowerCase().replaceAll("[^a-zA-Z]+", "");
+                    if (!aux.equals("")) {
+                        if (aux.length() >= minWord && aux.length() <= maxWord) {
+                            words[index] = aux;
+                            index++;
+                            if (index+1>limit) break;
+                        }
+                    }
+                    sb.delete(0, sb.length());
+                }
+                line = br.readLine();
+            }
+
+        } finally {
+            br.close();
+        }
+
+        System.out.println("processed " + lineCount + " lines");
+        return words;
     }
 }

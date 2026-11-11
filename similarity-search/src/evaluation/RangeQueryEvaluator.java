@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import spell_checker.LinearSearch;
 import spell_checker.SpellChecking;
+import spell_checker.trie_based.ATrie;
 
 /**
  *
@@ -18,7 +19,7 @@ import spell_checker.SpellChecking;
  */
 public class RangeQueryEvaluator {
 
-    public void evaluateRangeQueries(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String dataFile, String queryFile, int d, int dictionarySize, int times,  boolean includeOneTypo) throws IOException, Exception {
+    public void evaluateRangeQueries(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String dataFile, String queryFile, int d, int dictionarySize, int times, boolean includeOneTypo, int prefixSize) throws IOException, Exception {
 
         StringLoader stringLoader = new StringLoader();
         DictionaryCreator dictionaryCreator = new DictionaryCreator();
@@ -34,7 +35,7 @@ public class RangeQueryEvaluator {
         }
         allMeasures.add(oneMeasure);
 
-        ArrayList<String> queries = stringLoader.loadStrings(queryFile, includeOneTypo);
+        ArrayList<String> queries = stringLoader.loadStrings(queryFile, 99999, includeOneTypo, prefixSize);
 
         //warmup
         evalQueries(queries, d, dictionarySize, spellCheckers, 10, false);
@@ -59,17 +60,18 @@ public class RangeQueryEvaluator {
     }
 
     private List<Object> evalQueries(ArrayList<String> queries, int d, int dictionarySize, List<SpellChecking> checkers, int times, boolean verbose) {
-        if (verbose){
-        System.out.println("\nTesting range queries");
-        System.out.println("d = " + d);
+        if (verbose) {
+            System.out.println("\nTesting range queries");
+            System.out.println("d = " + d);
         }
         List<Object> oneMeasure = new ArrayList();
         oneMeasure.add(dictionarySize);
         SymSpellImpl.CANDIDATES = 0;
         SymSpellImpl.ANALYZED_CANDIDATES = 0;
         for (SpellChecking spellChecker : checkers) {
-            if (verbose)
+            if (verbose) {
                 System.out.println("\ntesting " + spellChecker.getName());
+            }
             long start = System.currentTimeMillis();
             for (int x = 0; x < times; x++) {
                 int count = 0;
@@ -82,16 +84,92 @@ public class RangeQueryEvaluator {
                 if (x == 0 && verbose) {
                     System.out.println("avg results " + count / queries.size());
                     System.out.println("avg distance " + sum / count);
-
                 }
 
             }
             long end = System.currentTimeMillis();
             long time = end - start;
-            if (verbose)
+            if (verbose) {
                 System.out.println("time (ms):" + time);
+            }
             oneMeasure.add(time);
         }
+
+        //System.out.println(oneMeasure);
+        return oneMeasure;
+    }
+
+    public void collectMeasures(LinearSearch linearSearch, SpellChecking spellChecker, String dataFile, String queryFile, int minD, int maxD, int dictionarySize, boolean includeOneTypo, int prefixSize) throws IOException, Exception {
+
+        StringLoader stringLoader = new StringLoader();
+        DictionaryCreator dictionaryCreator = new DictionaryCreator();
+
+        dictionaryCreator.setFile(dataFile);
+
+        List<List<Object>> allMeasures = new ArrayList();
+
+        List<Object> oneMeasure = new ArrayList();
+        oneMeasure.add("size");
+        oneMeasure.add(spellChecker.getName());
+        allMeasures.add(oneMeasure);
+
+        ArrayList<String> queries = stringLoader.loadStrings(queryFile, 99999, includeOneTypo, prefixSize);
+
+        for (int i = minD; i <= maxD; i++) {
+            //execution
+            oneMeasure = collectMeasures(queries, i, dictionarySize, spellChecker, true);
+            allMeasures.add(oneMeasure);
+        }
+
+        System.out.println("\nFinal Result:");
+        for (int i = 0; i < allMeasures.size(); i++) {
+            List<Object> oneMeasure_ = allMeasures.get(i);
+            boolean first = true;
+            System.out.println("");
+            for (Object object : oneMeasure_) {
+                if (!first) {
+                    System.out.print(", ");
+                }
+                System.out.print(object);
+                first = false;
+            }
+        }
+    }
+
+    private List<Object> collectMeasures(ArrayList<String> queries, int d, int dictionarySize, SpellChecking spellChecker, boolean verbose) {
+        if (verbose) {
+            System.out.println("\nTesting range queries");
+            System.out.println("d = " + d);
+        }
+
+        ATrie.NUM_VISITED_NODES = 0;
+        ATrie.NUM_EDIT_COMP = 0;
+
+        List<Object> oneMeasure = new ArrayList();
+        oneMeasure.add(dictionarySize);
+
+        oneMeasure.add(d);
+
+        SymSpellImpl.CANDIDATES = 0;
+        SymSpellImpl.ANALYZED_CANDIDATES = 0;
+        if (verbose) {
+            System.out.println("\ntesting " + spellChecker.getName());
+        }
+        int count = 0;
+        double sum = 0;
+        for (int i = 0; i < queries.size(); i++) {
+            List<String> list = spellChecker.search(queries.get(i), d);
+            count += list.size();
+            sum += sumDistances(list, queries.get(i));
+        }
+        if (verbose) {
+            System.out.println("avg results " + count / queries.size());
+            System.out.println("avg distance " + sum / count);
+        }
+        oneMeasure.add(ATrie.NUM_VISITED_NODES / queries.size() + ","
+                + ATrie.NUM_EDIT_COMP / queries.size() + ","
+                + count / queries.size() + ","
+                + sum / count);
 
         //System.out.println(oneMeasure);
         return oneMeasure;

@@ -3,12 +3,45 @@ package metric;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class Levensthein {
 	
+    
+    
+    public static int distance(String a, String b, int indelCost, int subCost) {
+         // a = a.toLowerCase();
+    // b = b.toLowerCase();
+    
+    int[] costs = new int[b.length() + 1];
+    
+    // Inicialização da primeira linha considerando o custo de inserção/deleção
+    for (int j = 0; j < costs.length; j++) {
+        costs[j] = j * indelCost;
+    }
+    
+    for (int i = 1; i <= a.length(); i++) {
+        // Inicialização da primeira coluna para a linha atual
+        costs[0] = i * indelCost;
+        int nw = (i - 1) * indelCost;
+        
+        for (int j = 1; j <= b.length(); j++) {
+            // Custo se os caracteres forem iguais (nenhuma operação necessária)
+            int costMatch = (a.charAt(i - 1) == b.charAt(j - 1)) ? nw : nw + subCost;
+            
+            // Math.min entre Deleção, Inserção e Substituição/Match
+            int cj = Math.min(
+                Math.min(costs[j] + indelCost, costs[j - 1] + indelCost), 
+                costMatch
+            );
+            
+            nw = costs[j];
+            costs[j] = cj;
+        }
+    }
+    
+    return costs[b.length()];
+}
     
     public static int distance(String a, String b) {
         //a = a.toLowerCase();

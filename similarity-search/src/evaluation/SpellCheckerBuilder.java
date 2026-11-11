@@ -6,6 +6,7 @@ package evaluation;
 
 import java.util.ArrayList;
 import java.util.List;
+import spell_checker.LinearAnagramSearch;
 import spell_checker.metric_based.BkTreeClusterE;
 import spell_checker.edit_based.Norvig;
 import spell_checker.SpellChecking;
@@ -18,6 +19,11 @@ import spell_checker.automaton_based.LuceneCheckerWrapper;
 import spell_checker.automaton_based.LuceneAutomatonWrapper;
 import spell_checker.ngram_based.LuceneNGramAutomatonWrapper;
 import spell_checker.edit_based.SymSpellWrapper;
+import spell_checker.metric_based.BkTreeClusterA;
+import spell_checker.ngram_based.NGram;
+import spell_checker.trie_based.FBTrie;
+import spell_checker.trie_based.LTrieWrapper;
+import spell_checker.trie_based.UltraCompactrie;
 
 /**
  *
@@ -41,30 +47,41 @@ public class SpellCheckerBuilder {
     public static final int ATRIE_3 = 14;
     public static final int ATRIE_4 = 15;
     public static final int ATRIE_UNBOUNDED = 16;
+    public static final int NGRAM2_CUSTOM = 17;
+    public static final int NGRAM3_CUSTOM = 18;
+    public static final int NGRAM4_CUSTOM = 19;
+    public static final int ATRIE_UNBOUNDED_COMPACT = 20;
+    public static final int FBTRIE = 21;
+    public static final int LTRIE_2 = 22;
+    public static final int FBTRIE_2 = 23;
+    public static final int LINEAR_ANAGRAM_SEARCH = 24;
+    public static final int BKTREEA = 25;
     
     
     
-    public static List<SpellChecking> createSpellCheckers(List<Integer> types, int maxEditDist, int prefixLen){
+    public static List<SpellChecking> createSpellCheckers(List<Integer> types, int maxEditDist, int prefixLen, int indelCost, int subCost){
             List<SpellChecking> list = new ArrayList<SpellChecking>();
         for (Integer type : types) {
-            SpellChecking spellChecker = createSpellChecking(type, maxEditDist, prefixLen);
+            SpellChecking spellChecker = createSpellChecking(type, maxEditDist, prefixLen, indelCost, subCost);
             list.add(spellChecker);
         }
         return list;
     }
     
-    public static SpellChecking createSpellChecking(int type, int maxEditDist, int prefixLen) {
+    public static SpellChecking createSpellChecking(int type, int maxEditDist, int prefixLen, int indelCost, int subCost) {
         switch (type) {
             case ATRIE:
-                return new ATrie(prefixLen, maxEditDist);
+                return new ATrie(prefixLen, maxEditDist, indelCost, subCost);
             case ATRIE_2:
-                return new ATrie(prefixLen, 2);
+                return new ATrie(prefixLen, 2, indelCost, subCost);
             case ATRIE_3:
-                return new ATrie(prefixLen, 3);
+                return new ATrie(prefixLen, 3, indelCost, subCost);
             case ATRIE_4:
-                return new ATrie(prefixLen, 4);
+                return new ATrie(prefixLen, 4, indelCost, subCost);
             case ATRIE_UNBOUNDED:
-                return new ATrie(prefixLen, 9999);
+                return new ATrie(prefixLen, 9999, indelCost, subCost);
+            case ATRIE_UNBOUNDED_COMPACT:
+                return new UltraCompactrie();
             case LTRIE:
                 return new LTrie(prefixLen, maxEditDist);
             case BKTREE:
@@ -81,12 +98,26 @@ public class SpellCheckerBuilder {
                 return new LuceneNGramAutomatonWrapper(2);
             case NGRAM3:
                 return new LuceneNGramAutomatonWrapper(3);
+            case NGRAM2_CUSTOM:
+                return new NGram(2);
+            case NGRAM3_CUSTOM:
+                return new NGram(3);
+            case NGRAM4_CUSTOM:
+                return new NGram(4);
             case LEV_AUTOMATON:
                 return new LevAutomatonWrapper(maxEditDist);
             case NORVIG:
                 return new Norvig();
             case FAST_SS:
                 return new FastSSWrapper(maxEditDist);
+            case LTRIE_2:
+                return new LTrieWrapper();
+            case FBTRIE_2:
+                return new FBTrie(prefixLen, maxEditDist);
+            case LINEAR_ANAGRAM_SEARCH:
+                return new LinearAnagramSearch();
+            case BKTREEA:
+                return new BkTreeClusterA(1, maxEditDist);
         }
         return null;
     }

@@ -4,6 +4,7 @@
  */
 package evaluation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -51,8 +52,19 @@ public class IndexValidator {
             }
         }
     }
+    
+    public void checkPrecision(LinearSearch linearSearch, List<SpellChecking> spellCheckers, ArrayList<StringPoint> points, int dist) throws Exception {
+        
+        for (int x = 0; x < 1000; x++) {
+            
+        String word = points.get(x).word;
+            checkPrecision(linearSearch, spellCheckers, word, dist);
+        
+        }
+    }
 
     public void checkPrecision(LinearSearch linearSearch, List<SpellChecking> spellCheckers, String word, int dist) throws Exception {
+        
         System.out.println("---- word: " + word + " dist: " + dist);
 
         List<String> correctResults;
@@ -75,6 +87,5 @@ public class IndexValidator {
                 throw new Exception("");
             }
         }
-
     }
 }

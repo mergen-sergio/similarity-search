@@ -9,11 +9,15 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import spell_checker.LinearSearch;
 import spell_checker.SpellChecking;
 import object.StringPoint;
+import spell_checker.trie_based.ATrie;
+import spell_checker.trie_based.FBTrie;
 
 /**
  *
@@ -50,6 +54,16 @@ public class IndexBuilder {
             MemoryUsage beforeHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
             long start = System.currentTimeMillis();
             System.out.println("building " + spellChecker.getName());
+            
+            if (spellChecker.getName().equals("A-Trie")){
+                ATrie.NUM_NODES = 0;
+                ATrie.NUM_NODES_WITH_WORDS = 0;
+            }
+            else if (spellChecker.getName().equals("FB-Trie")){
+                FBTrie.NUM_NODES = 0;
+                FBTrie.NUM_NODES_WITH_WORDS = 0;
+            } 
+            
             spellChecker.addWords(words_);
 
             long end = System.currentTimeMillis();
@@ -63,6 +77,19 @@ public class IndexBuilder {
             long usedMemoryAfter = afterHeapMemoryUsage.getUsed();
             System.out.println("Used Memory: " + ((usedMemoryAfter - usedMemoryBefore) / 1024) + " kb");
             System.out.println("");
+            
+            if (spellChecker.getName().equals("A-Trie")){
+                System.out.println("ATries Num Nodes:"+ATrie.NUM_NODES);
+                System.out.println("ATries Num Nodes with words:"+ATrie.NUM_NODES_WITH_WORDS);
+                System.out.println("");
+            }
+            else if (spellChecker.getName().equals("FB-Trie")){
+                System.out.println("ATries Num Nodes:"+FBTrie.NUM_NODES);
+                System.out.println("ATries Num Nodes with words:"+FBTrie.NUM_NODES_WITH_WORDS);
+                System.out.println("");
+            }
+                
+            
 
         }
 
@@ -145,7 +172,7 @@ public class IndexBuilder {
 
         System.out.println("-- reading file " + filePath);
         ArrayList<StringPoint> words = StringLoader.loadStringPoints(filePath, Integer.MAX_VALUE, 0, 49);
-
+        
         List<String> words_ = words.stream().map(word -> new String(word.word))
                 .collect(Collectors.toList());
 

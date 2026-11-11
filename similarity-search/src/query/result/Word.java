@@ -35,4 +35,22 @@ public class Word implements Comparable<Word>{
     public int compareTo(Word o) {
         return (dist-o.dist);
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Word other = (Word) obj;
+        
+        // Considered equal if they have the same String word
+        if (this.word == null) {
+            return other.word == null;
+        }
+        return this.word.equals(other.word);
+    }
+
+    @Override
+    public int hashCode() {
+        return word != null ? word.hashCode() : 0;
+    }
     }

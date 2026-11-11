@@ -11,8 +11,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Random;
 
 /**
  *
@@ -105,6 +108,42 @@ public class StringHelper {
 
         System.out.println("processed " + lineCount + " lines");
         return words;
+    }
+    
+    public static String replaceRandomCharacters(String input, int numberOfChars, String replacement) {
+    if (input == null || input.isEmpty() || numberOfChars <= 0) {
+        return input;
+    }
+
+    // Cap the number of replacements at the maximum length of the string
+    int actualReplacements = Math.min(numberOfChars, input.length());
+
+    // 1. Create a list of all valid index positions in the string
+    List<Integer> indices = new ArrayList<>();
+    for (int i = 0; i < input.length(); i++) {
+        indices.add(i);
+    }
+
+    // 2. Shuffle the indices to randomize the selection
+    Collections.shuffle(indices, new Random());
+
+    // 3. Take the first X unique indices and sort them in reverse order
+    // Sorting in reverse (descending) is crucial so that replacing a character
+    // at a later index doesn't shift the positions of the earlier indices.
+    List<Integer> targetIndices = indices.subList(0, actualReplacements);
+    targetIndices.sort(Collections.reverseOrder());
+
+    // 4. Perform the substitutions using a StringBuilder
+    StringBuilder sb = new StringBuilder(input);
+    for (int index : targetIndices) {
+        sb.replace(index, index + 1, replacement);
+    }
+
+    return sb.toString();
+}
+    
+    public static void main(String[] args) {
+        System.out.println(StringHelper.replaceRandomCharacters("arvore", 3, "?"));
     }
 
 }

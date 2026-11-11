@@ -29,12 +29,17 @@ public class ATrie implements SpellChecking {
     
     int maxEditDist = 2;
 
+    public static int NUM_VISITED_NODES = 0;
+    public static int NUM_EDIT_COMP = 0;
+    public static int MAX_BUCKETS = 0;
 
     public static int NUM_NODES = 0;
-    public static int NUM_ESCAPED_NODES = 0;
-    public static int NUM_ACCESSED_NODES = 0;
+    public static int NUM_NODES_WITH_WORDS = 0;
 
     int prefixSize;
+    
+    static int indelCost = 1;
+    static int subCost = 1;
 
     public class TrieNode {
 
@@ -73,12 +78,19 @@ public class ATrie implements SpellChecking {
         }
     }
 
-    public ATrie(int prefixSize, int maxEditDist) {
+    public ATrie(int prefixSize, int maxEditDist, int indelCost, int subCost) {
         this.prefixSize = prefixSize;
         root = new TrieNode();
         //root.c = '?';
         root.type = 0;
         this.maxEditDist = maxEditDist;
+        if (subCost> 2 * indelCost){
+            this.subCost = 2* indelCost;
+        }
+        else this.subCost = subCost;
+        
+        this.indelCost = indelCost;
+        
     }
 
     @Override
@@ -150,6 +162,7 @@ public class ATrie implements SpellChecking {
             if (word.permut.length <= index + 1) {
                 newNode.word = new TrieWord(word.words.get(0), prefixSize);
                 updateMinLevel(newNode);
+                NUM_NODES_WITH_WORDS++;
                 return;
             } else {
                 addWord(newNode, newNode.child, word, index + 1);
@@ -184,7 +197,7 @@ public class ATrie implements SpellChecking {
         }
 
         TrieNode newNode = new TrieNode();
-        NUM_NODES++;
+        //NUM_NODES++;
 
         newNode.c = word.permut[index];
         newNode.prefix = parent.prefix + (char) (newNode.c & 0xFF);
@@ -202,6 +215,7 @@ public class ATrie implements SpellChecking {
         if (word.permut.length <= index + 1) {
             newNode.word = new TrieWord(word.words.get(0), prefixSize);
             updateMinLevel(newNode);
+            //NUM_NODES_WITH_WORDS++;
         } else {
 
             addWord(newNode, newNode.child, word, index + 1);
@@ -222,13 +236,29 @@ public class ATrie implements SpellChecking {
         return results.toArray();
     }
 
-    @Override
+    //@Override
     public List<String> topKSearch(String query, int topK) {
         TopKResult results = new TopKResult(topK);
         results.maxDist = maxEditDist + 1;
         topkSearch(query, results);
         return results.toArray();
 
+    }
+    
+    public List<String> topKSearch1(String query, int topK) {
+        List<String> resultsX = new ArrayList<>();
+        for (int i = 1; i < maxEditDist + 1; i++) {
+            List<String> results = search(query, i);
+            results.removeAll(resultsX);
+            for (int j = 0; j < results.size(); j++) {
+                resultsX.add(results.get(j));
+                if (resultsX.size() == topK) {
+                    return resultsX;
+                }
+            }
+        }
+        //System.out.println("chegou aqui!!");
+        return resultsX;
     }
 
     private void rangeSearch(String q, Result result) {
@@ -263,7 +293,7 @@ public class ATrie implements SpellChecking {
             if (metaNode.maxDist >= result.maxDist) {
                 break;
             }
-
+            NUM_VISITED_NODES++;
             addResults(metaNode, query, result);
 
             int xxx = (query.permut.length - metaNode.index) - (metaNode.node.deepestLevel - metaNode.node.level);
@@ -355,10 +385,75 @@ public class ATrie implements SpellChecking {
     /**
      * FORMA 1
      */
-    private int rangeSearch(TrieNode node, TrieWord query, Result result, int difA, int difB, int index) {
+    private int rangeSearch1(TrieNode node, TrieWord query, Result result, int difA, int difB, int index) {
 
         
         //Trie2.COUNT++;
+        difB++;
+        while (index < query.permut.length && node.c > query.permut[index]) {
+                index++;
+                difA++;
+        }
+        if (index < query.permut.length && node.c == query.permut[index]){
+            index++;
+            difB--;
+        }
+        
+
+        if (difA > result.maxDist) {
+            return index;
+        }
+
+        if (difB > result.maxDist) {
+            return index;
+        }
+
+        int xxx = (query.permut.length - index) - (node.deepestLevel - node.level);
+        if (xxx + difA > result.maxDist) {
+            return index;
+        }
+
+        addResults(node, difA, difB, query, result);
+
+        xxx = (node.minLevelAhead) - (query.permut.length - index);
+        if (xxx + difB > result.maxDist) {
+            return index;
+        }
+
+        TrieNode child = node.child;
+
+        int index_ = index;
+        int index2;
+        while (child != null) {
+            //COUNT++;
+            index2 = rangeSearch(child, query, result, difA, difB, index_);
+            if (index2 > index_) {
+                difA += (index2 - index_);
+                if (difA > result.maxDist) {
+                    return index;
+                }
+
+                index_ = index2;
+                xxx = (query.permut.length - index_) - (node.deepestLevel - node.level);
+                if (xxx + difA > result.maxDist) {
+                    return index;
+                }
+                xxx = (node.minLevelAhead) - (query.permut.length - index_);
+                if (xxx + difB > result.maxDist) {
+                    return index;
+                }
+
+            }
+            child = child.sibling;
+
+        }
+        return index;
+    }
+    
+    private int rangeSearch(TrieNode node, TrieWord query, Result result, int difA, int difB, int index) {
+
+        
+        NUM_VISITED_NODES++;
         difB++;
         boolean found = false;
         int index0 = index;
@@ -516,7 +611,7 @@ public class ATrie implements SpellChecking {
 
     private class DistanceQueue {
 
-        int maxD = 50;
+        int maxD = 100;
         Stack<QueueNode> stacks[] = new Stack[maxD];
         int currentD = 0;
 
@@ -529,6 +624,8 @@ public class ATrie implements SpellChecking {
         public void add(QueueNode node) {
             //System.out.println("adding "+d+" "+node.node.prefix);
             stacks[node.maxDist].push(node);
+            if (node.maxDist>MAX_BUCKETS)
+                MAX_BUCKETS = node.maxDist;
         }
 
         public QueueNode poll() {
@@ -574,9 +671,9 @@ public class ATrie implements SpellChecking {
         if (node.word != null) {
             int dif = 0;
             if (query.permut.length > node.word.permut.length) {
-                dif = difB + (query.permut.length - node.word.permut.length);
+                dif = difB * subCost + (query.permut.length - node.word.permut.length) * indelCost ;
             } else {
-                dif = difA + (node.word.permut.length - query.permut.length);
+                dif = difA * subCost + (node.word.permut.length - query.permut.length) * indelCost;
             }
             if (dif <= result.maxDist) {
 
@@ -585,12 +682,12 @@ public class ATrie implements SpellChecking {
 
                     String word = node.word.words.get(i);
 
-                    //int d1 = Levenshtein.distance(q, word);
-                    //int d1 = lev.wordDistance(q, word);
+                    //int d1 = metric.Levensthein.distance(q, word, indelCost, subCost);
+                    //int d1 = lev.wordDistance(q, word, indelCost, subCost);
                     int d1 = ukonnen.ukkonen(q, word, result.maxDist + 1);
                     //int d1 = Levenshtein.distance(q, word);
                     //int d1 = dam.distanceWithEarlyStop(q, word, result.maxDist);
-                    //Tester.search_count++;
+                    NUM_EDIT_COMP++;
                     if (d1 <= result.maxDist) 
                     {
                         result.addWord(word, d1);
@@ -618,8 +715,10 @@ public class ATrie implements SpellChecking {
                 String q = query.words.get(0);
                 for (int i = 0; i < qn.node.word.words.size(); i++) {
                     String word = qn.node.word.words.get(i);
-                    int d1 = lev.wordDistance(q, qn.node.word.words.get(i));
+                    //int d1 = lev.wordDistance(q, qn.node.word.words.get(i));
                     //int d1 = lev.ukkonen(q, qn.node.word.words.get(i), result.maxDist+1);
+                    int d1 = ukonnen.ukkonen(q, word, result.maxDist + 1);
+                    NUM_EDIT_COMP++;
                     //int d1 = ukkonen.ukkonen(q, word, result.maxDist + 1);
                     //int d1 = dam.distanceWithEarlyStop(q, qn.node.word.words.get(i), result.maxDist);
                     //int d1 = Levenshtein.distance(q, qn.node.word.words.get(i), result.maxDist);
@@ -678,7 +777,7 @@ public class ATrie implements SpellChecking {
 
     public static void main(String[] args) {
         int prefixSize = 10;
-        ATrie trie = new ATrie(prefixSize, 2);
+        ATrie trie = new ATrie(prefixSize, 2,1,1);
 
         ArrayList<TrieWord> list = new ArrayList<TrieWord>();
         list.add(new TrieWord("ab", prefixSize));

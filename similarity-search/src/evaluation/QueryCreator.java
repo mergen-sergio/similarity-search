@@ -65,7 +65,7 @@ public class QueryCreator {
         List<String> words_ = points.stream().map(word -> word.word)
                 .collect(Collectors.toList());
         ArrayList<String> result = new ArrayList<>();
-        ATrie trieSearch = new ATrie(50, 2);
+        ATrie trieSearch = new ATrie(50, 2, 1, 1);
         trieSearch.addWords(words_);
         try {
             writer = new BufferedWriter(new OutputStreamWriter(
@@ -118,10 +118,13 @@ public class QueryCreator {
             QueryCreator queryCreator = new QueryCreator();
             StringLoader stringLoader = new StringLoader();
             int c = 11;
-            String dataFile = "C:\\googlebooks_cleaned_200000.txt";
-            String queryFile = "C:\\queries_200k_"+c+".txt";
-            ArrayList<StringPoint> points = stringLoader.loadStrings(dataFile, 999999999, 3, 49, false);
-            queryCreator.createQueryFile(queryFile, points, 50, c, c);
+            //String dataFile = "C:\\googlebooks_cleaned_200000.txt";
+            //String dataFile = "C:\\teste\\palavras_sujas_wikipedia_range2.txt";
+            String dataFile = "C:\\teste\\humanDNA30.txt";
+            //String queryFile = "C:\\teste\\queries_wikipedia_large.txt";
+            String queryFile = "C:\\teste\\queries_DNA30.txt";
+            ArrayList<StringPoint> points = stringLoader.loadStrings(dataFile, 200000, 3, 110, false);
+            queryCreator.createQueryFile(queryFile, points, 50, 3, 110);
             //queryCreator.createQueryFileWithNonExistentWords(queryFile, points, 100);
         } catch (Exception ex) {
             System.out.println("ERROR:"+ex.getMessage());
