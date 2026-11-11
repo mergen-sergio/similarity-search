@@ -12,6 +12,9 @@ The following approximate search methods are implemented and compared:
 - **LTRIE**  
   Similar to ATRIE but built using the lexicographic representation of words instead of sorted characters. Also supports fast approximate search.
 
+- **FBTRIE**  
+  A hybrid method combining prefix trees and pattern partitioning. It utilizes a pair of tries—one indexing the original dictionary strings and another indexing their reversed counterparts—to efficiently prune the search space during approximate queries.
+
 - **BKTREE**  
   A tree-based index where each node contains a word, and children are organized by edit distance to that word. Suited for small to medium-sized dictionaries.
 
@@ -49,9 +52,9 @@ To reproduce the experiments:
 
 ## Summary of Findings
 
-We focus our analysis on **ATRIE** and **SYMSPELL**, the most promising methods among those evaluated:
+We focus our analysis on **ATRIE**, **FBTRIE**,  **SYMSPELL**, the most promising methods among those evaluated:
 
-- **ATRIE** stands out as a **robust and versatile solution**. It offers:
+- **ATRIE** and **FBTRIE** stands out as a **robust and versatile solution**. It offers:
   - High accuracy in both range and top-k queries.
   - Efficient index size and fast query times.
   - Support for larger edit distances.
@@ -62,7 +65,9 @@ We focus our analysis on **ATRIE** and **SYMSPELL**, the most promising methods 
   - It lacks flexibility to handle higher distances or custom similarity definitions.
   - Precision drops sharply when querying longer or noisier words.
 
-In summary, **ATRIE delivers a strong balance of efficiency, scalability, and accuracy**. **SYMSPELL** may still be useful when memory is abundant and ultra-low-latency for low-error queries is essential.
+In summary, **ATRIE** and **FBTRIE** deliver a strong balance of efficiency, scalability, and accuracy. **SYMSPELL** may still be useful when memory is abundant and ultra-low-latency for low-error queries is essential. 
+
+**ATRIE** performs better with large alphabets, and it optimizes processing better than **FBTRIE**, especially considering length-pruning. However, the efficiency of **ATRIE** is penalized when dealing with small alphabets where the number of anagrams is large, such as DNA sequences.
 
 <!-- ## Citation
 
